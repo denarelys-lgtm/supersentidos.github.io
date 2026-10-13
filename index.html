@@ -1,727 +1,667 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Super Sentidos HUD Pro — Telemetría en Tiempo Real</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        hudBg: '#050811',
-                        hudCard: '#0c1322',
-                        hudBorder: '#1e293b',
-                        hudCyan: '#00f0ff',
-                        hudPink: '#ff007f',
-                        hudGreen: '#00ff66',
-                        hudYellow: '#ffcc00',
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Super Sentidos - Redmi Note 14 Pro+</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap');
-        
+        :root {
+            --bg: #0a0e17;
+            --card: #141a24;
+            --border: #2a3444;
+            --accent: #00e5ff;
+            --accent2: #ff3d7f;
+            --text: #e8edf5;
+            --dim: #7a8ba0;
+            --ok: #00e676;
+            --err: #ff5252;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #050811;
-            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
             overflow-x: hidden;
         }
-
-        .font-mono-hud {
-            font-family: 'Share Tech Mono', monospace;
+        .header {
+            text-align: center;
+            padding: 20px 0 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
         }
-
-        /* Scanline HUD effect */
-        .hud-scanline::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px;
-            z-index: 10;
-            pointer-events: none;
-            opacity: 0.3;
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-
-        /* Glow and border effects */
-        .hud-card {
-            background: linear-gradient(135deg, rgba(12, 19, 34, 0.9) 0%, rgba(8, 12, 22, 0.95) 100%);
-            border: 1px solid #1e293b;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.05), inset 0 0 15px rgba(0, 240, 255, 0.02);
+        .header p {
+            color: var(--dim);
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
             position: relative;
+            overflow: hidden;
         }
-        .hud-card::after {
+        .card::before {
             content: '';
             position: absolute;
-            top: 0; right: 0;
-            width: 10px; height: 10px;
-            border-top: 2px solid #00f0ff;
-            border-right: 2px solid #00f0ff;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.6;
         }
-        .hud-card::before {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 10px; height: 10px;
-            border-bottom: 2px solid #00f0ff;
-            border-left: 2px solid #00f0ff;
+        .card h2 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-
-        .hud-glow-cyan {
-            box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+        .card h2 .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 1.5s infinite;
         }
-        .hud-glow-pink {
-            box-shadow: 0 0 12px rgba(255, 0, 127, 0.3);
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
         }
-
-        @keyframes radarSweep {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+            line-height: 1.2;
         }
-        .radar-line {
-            animation: radarSweep 4s linear infinite;
-            transform-origin: center;
+        .unit {
+            font-size: 0.75rem;
+            color: var(--dim);
+            font-weight: 400;
         }
-
-        /* Custom scrollbar for console log */
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
+        .axis-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(42,52,68,0.5);
         }
-        ::-webkit-scrollbar-track {
-            background: #050811;
+        .axis-row:last-child { border-bottom: none; }
+        .axis-label {
+            color: var(--dim);
+            font-size: 0.8rem;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 2px;
+        .axis-val {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.85rem;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #00f0ff;
+        .bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            transition: width 0.15s ease;
+            width: 0%;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent), #0091ea);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .status {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--dim);
+            margin: 8px 0;
+        }
+        .status.ok { color: var(--ok); }
+        .status.err { color: var(--err); }
+        .full { grid-column: 1 / -1; }
+        .value-sm { font-size: 1.3rem; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-on { background: rgba(0,230,118,0.15); color: var(--ok); }
+        .badge-off { background: rgba(255,82,82,0.15); color: var(--err); }
+        .badge-na { background: rgba(122,139,160,0.15); color: var(--dim); }
+        @media (max-width: 400px) {
+            .grid { grid-template-columns: 1fr; }
+            .value { font-size: 1.5rem; }
         }
     </style>
 </head>
-<body class="min-h-screen p-3 md:p-6 pb-20">
+<body>
 
-    <header class="max-w-4xl mx-auto mb-6 text-center">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-hudCyan/10 border border-hudCyan/30 text-hudCyan text-xs font-mono-hud tracking-widest uppercase mb-2">
-            <span class="w-2 h-2 rounded-full bg-hudCyan animate-ping"></span>
-            Telemetry Systems Online
+<div class="header">
+    <h1>⚡ Super Sentidos</h1>
+    <p>Redmi Note 14 Pro+ 5G — Percepción en tiempo real</p>
+</div>
+
+<button class="btn" id="startBtn">▶ Activar Sensores</button>
+<div class="status" id="statusMsg">Pulsa para conceder permisos y comenzar</div>
+
+<div class="grid" id="dashboard" style="display:none;">
+
+    <!-- ACELERÓMETRO -->
+    <div class="card">
+        <h2><span class="dot"></span> Acelerómetro</h2>
+        <div class="axis-row">
+            <span class="axis-label">Eje X</span>
+            <span class="axis-val" id="accelX">—</span>
         </div>
-        <h1 class="text-3xl md:text-4xl font-black tracking-wider bg-gradient-to-r from-hudCyan via-white to-hudPink bg-clip-text text-transparent">
-            SUPER SENTIDOS <span class="text-xs px-2 py-0.5 bg-hudPink/20 text-hudPink border border-hudPink/40 rounded align-middle">PRO</span>
-        </h1>
-        <p class="text-xs md:text-sm text-slate-400 mt-1 font-mono-hud">REDMI NOTE 14 PRO+ 5G — ADVANCED SENSOR MATRIX</p>
-    </header>
-
-    <div class="max-w-4xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button id="startBtn" class="sm:col-span-2 relative group overflow-hidden rounded-xl p-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold uppercase tracking-wider text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] active:scale-95 flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            <span>Activar Todos los Sensores</span>
-        </button>
-        <button id="calibBtn" disabled class="rounded-xl p-4 bg-slate-900 border border-slate-700 text-slate-300 font-semibold uppercase tracking-wider text-sm transition-all duration-300 hover:border-hudCyan hover:text-hudCyan active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span>Calibrar / Reset Cero</span>
-        </button>
+        <div class="axis-row">
+            <span class="axis-label">Eje Y</span>
+            <span class="axis-val" id="accelY">—</span>
+        </div>
+        <div class="axis-row">
+            <span class="axis-label">Eje Z</span>
+            <span class="axis-val" id="accelZ">—</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="accelBar"></div></div>
     </div>
 
-    <div id="statusBanner" class="max-w-4xl mx-auto mb-6 p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-center text-xs md:text-sm font-mono-hud text-slate-400">
-        Pulsa el botón superior para conceder permisos y comenzar la telemetría en tiempo real.
+    <!-- GIROSCOPIO -->
+    <div class="card">
+        <h2><span class="dot"></span> Giroscopio</h2>
+        <div class="axis-row">
+            <span class="axis-label">Vel. angular X</span>
+            <span class="axis-val" id="gyroX">—</span>
+        </div>
+        <div class="axis-row">
+            <span class="axis-label">Vel. angular Y</span>
+            <span class="axis-val" id="gyroY">—</span>
+        </div>
+        <div class="axis-row">
+            <span class="axis-label">Vel. angular Z</span>
+            <span class="axis-val" id="gyroZ">—</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="gyroBar"></div></div>
     </div>
 
-    <main class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4" id="dashboard" style="display:none;">
-
-        <!-- ACELERÓMETRO -->
-        <div class="hud-card rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudCyan flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudCyan animate-pulse"></span> Acelerómetro Vectorial
-                </h2>
-                <span class="text-xs font-mono-hud text-slate-500" id="accelFreq">60 Hz</span>
-            </div>
-            <div class="space-y-3 font-mono-hud">
-                <div class="flex justify-between items-center bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/60">
-                    <span class="text-xs text-slate-400">EJE X (Lateral)</span>
-                    <span class="text-hudCyan font-bold text-sm" id="accelX">—</span>
-                </div>
-                <div class="flex justify-between items-center bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/60">
-                    <span class="text-xs text-slate-400">EJE Y (Frontal)</span>
-                    <span class="text-hudCyan font-bold text-sm" id="accelY">—</span>
-                </div>
-                <div class="flex justify-between items-center bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/60">
-                    <span class="text-xs text-slate-400">EJE Z (Vertical)</span>
-                    <span class="text-hudCyan font-bold text-sm" id="accelZ">—</span>
-                </div>
-            </div>
-            <div class="mt-4">
-                <div class="flex justify-between text-xs text-slate-400 mb-1 font-mono-hud">
-                    <span>Magnitud G-Force</span>
-                    <span id="accelMag" class="text-white">0.00 G</span>
-                </div>
-                <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
-                    <div id="accelBar" class="h-full bg-gradient-to-r from-hudCyan to-blue-500 w-0 transition-all duration-75"></div>
-                </div>
-            </div>
+    <!-- MAGNETÓMETRO -->
+    <div class="card">
+        <h2><span class="dot"></span> Magnetómetro (Brújula)</h2>
+        <div class="axis-row">
+            <span class="axis-label">Campo X</span>
+            <span class="axis-val" id="magX">—</span>
         </div>
-
-        <!-- GIROSCOPIO CON ONDA SVG -->
-        <div class="hud-card rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudPink flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudPink animate-pulse"></span> Giroscopio & Osciloscopio
-                </h2>
-                <span class="text-xs font-mono-hud text-slate-500" id="gyroFreq">60 Hz</span>
-            </div>
-            <!-- Live SVG Waveform -->
-            <div class="bg-slate-950/80 rounded-lg p-2 border border-slate-800/80 mb-3 relative overflow-hidden h-20">
-                <svg id="gyroWaveform" class="w-full h-full" viewBox="0 0 300 60" preserveAspectRatio="none">
-                    <path id="wavePath" d="M0,30 Q75,10 150,30 T300,30" fill="none" stroke="#ff007f" stroke-width="2"/>
-                </svg>
-                <div class="absolute top-1 right-2 text-[10px] font-mono-hud text-hudPink/70">WAVE STREAM</div>
-            </div>
-            <div class="grid grid-cols-3 gap-2 font-mono-hud text-center">
-                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                    <div class="text-[10px] text-slate-400">PITCH (X)</div>
-                    <div class="text-hudPink font-bold text-xs mt-1" id="gyroX">—</div>
-                </div>
-                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                    <div class="text-[10px] text-slate-400">ROLL (Y)</div>
-                    <div class="text-hudPink font-bold text-xs mt-1" id="gyroY">—</div>
-                </div>
-                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                    <div class="text-[10px] text-slate-400">YAW (Z)</div>
-                    <div class="text-hudPink font-bold text-xs mt-1" id="gyroZ">—</div>
-                </div>
-            </div>
+        <div class="axis-row">
+            <span class="axis-label">Campo Y</span>
+            <span class="axis-val" id="magY">—</span>
         </div>
-
-        <!-- MAGNETÓMETRO & BRÚJULA HUD -->
-        <div class="hud-card rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudGreen flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudGreen animate-pulse"></span> Magnetómetro & Rumbo
-                </h2>
-                <span class="text-xs font-mono-hud text-slate-500" id="magStatus">Activo</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <!-- Mini Compass Circle -->
-                <div class="relative w-24 h-24 rounded-full border-2 border-slate-800 flex items-center justify-center bg-slate-950/80 shrink-0">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="w-full h-[1px] bg-slate-800"></div>
-                        <div class="h-full w-[1px] bg-slate-800 absolute"></div>
-                    </div>
-                    <!-- Compass Needle -->
-                    <div id="compassNeedle" class="absolute w-1.5 h-16 bg-gradient-to-t from-slate-600 via-hudGreen to-hudPink rounded-full transition-transform duration-100" style="transform: rotate(0deg);"></div>
-                    <div class="text-[10px] font-mono-hud text-hudGreen absolute top-1">N</div>
-                </div>
-                <div class="flex-1 space-y-2 font-mono-hud text-xs">
-                    <div class="flex justify-between bg-slate-950/60 px-3 py-1.5 rounded border border-slate-800/60">
-                        <span class="text-slate-400">Rumbo:</span>
-                        <span class="text-hudGreen font-bold" id="headingVal">—</span>
-                    </div>
-                    <div class="flex justify-between bg-slate-950/60 px-3 py-1.5 rounded border border-slate-800/60">
-                        <span class="text-slate-400">Campo (μT):</span>
-                        <span class="text-slate-200" id="magTotal">—</span>
-                    </div>
-                </div>
-            </div>
+        <div class="axis-row">
+            <span class="axis-label">Campo Z</span>
+            <span class="axis-val" id="magZ">—</span>
         </div>
-
-        <!-- LUZ AMBIENTAL -->
-        <div class="hud-card rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudYellow flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudYellow animate-pulse"></span> Luz Ambiental (Lux)
-                </h2>
-                <span id="luxBadge" class="px-2 py-0.5 rounded text-[10px] font-mono-hud uppercase bg-slate-800 text-slate-400">Inactivo</span>
-            </div>
-            <div class="flex items-baseline gap-2 mb-3">
-                <div class="text-3xl font-black font-mono-hud text-white" id="luxValue">—</div>
-                <div class="text-xs text-slate-400 font-mono-hud">LUX / ILUMINANCIA</div>
-            </div>
-            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800 mb-3">
-                <div id="luxBar" class="h-full bg-gradient-to-r from-yellow-500 to-amber-300 w-0 transition-all duration-150"></div>
-            </div>
-            <p class="text-[11px] text-slate-400 font-mono-hud" id="luxDesc">Esperando lectura del sensor óptico...</p>
+        <div class="axis-row">
+            <span class="axis-label">Rumbo</span>
+            <span class="axis-val" id="heading">—</span>
         </div>
+    </div>
 
-        <!-- ORIENTACIÓN Y ACTITUD (ATTITUDE INDICATOR) -->
-        <div class="hud-card rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudCyan flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudCyan animate-pulse"></span> Orientación Espacial
-                </h2>
-                <span id="oriAbsBadge" class="px-2 py-0.5 rounded text-[10px] font-mono-hud bg-slate-800 text-slate-400">Relativa</span>
-            </div>
-            <div class="grid grid-cols-3 gap-2 font-mono-hud text-center mb-3">
-                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                    <div class="text-[10px] text-slate-400">Alpha (Z)</div>
-                    <div class="text-hudCyan font-bold text-xs mt-1" id="oriAlpha">—</div>
-                </div>
-                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                    <div class="text-[10px] text-slate-400">Beta (X)</div>
-                    <div class="text-hudCyan font-bold text-xs mt-1" id="oriBeta">—</div>
-                </div>
-                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60">
-                    <div class="text-[10px] text-slate-400">Gamma (Y)</div>
-                    <div class="text-hudCyan font-bold text-xs mt-1" id="oriGamma">—</div>
-                </div>
-            </div>
-            <div class="text-[11px] text-slate-400 font-mono-hud text-center">Inclinación en tiempo real (DeviceOrientation)</div>
+    <!-- LUZ AMBIENTAL -->
+    <div class="card">
+        <h2><span class="dot"></span> Luz Ambiental</h2>
+        <div class="value" id="luxValue">—</div>
+        <div class="unit">lux (iluminancia)</div>
+        <div class="bar"><div class="bar-fill" id="luxBar"></div></div>
+        <div class="axis-row" style="margin-top:8px">
+            <span class="axis-label">Estado</span>
+            <span class="badge badge-na" id="luxBadge">—</span>
         </div>
+    </div>
 
-        <!-- HAPTICA / VIBRACIÓN LINEAL -->
-        <div class="hud-card rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudPink flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudPink animate-pulse"></span> Motor Háptico Lineal (X-Axis)
-                </h2>
-                <span id="vibStatusBadge" class="px-2 py-0.5 rounded text-[10px] font-mono-hud bg-slate-800 text-slate-400">Listo</span>
-            </div>
-            <div class="text-sm font-mono-hud text-slate-300 mb-3" id="vibInfo">Simulación de retroalimentación táctil avanzada</div>
-            <div class="grid grid-cols-3 gap-2">
-                <button class="vib-test-btn px-2 py-2.5 bg-slate-900 border border-slate-700 hover:border-hudPink text-xs font-mono-hud text-slate-200 rounded-lg active:scale-95 transition" data-pattern="40">Pulso Corto</button>
-                <button class="vib-test-btn px-2 py-2.5 bg-slate-900 border border-slate-700 hover:border-hudPink text-xs font-mono-hud text-slate-200 rounded-lg active:scale-95 transition" data-pattern="100,50,100">Doble Pulso</button>
-                <button class="vib-test-btn px-2 py-2.5 bg-slate-900 border border-slate-700 hover:border-hudPink text-xs font-mono-hud text-slate-200 rounded-lg active:scale-95 transition" data-pattern="50,30,150,30,300">Latido HUD</button>
-            </div>
+    <!-- ORIENTACIÓN -->
+    <div class="card">
+        <h2><span class="dot"></span> Orientación</h2>
+        <div class="axis-row">
+            <span class="axis-label">Alpha (Z)</span>
+            <span class="axis-val" id="oriAlpha">—</span>
         </div>
-
-        <!-- BATERÍA Y HARDWARE EXTRAS -->
-        <div class="hud-card rounded-2xl p-5 md:col-span-2">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-hudGreen flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-hudGreen animate-pulse"></span> Subsistema de Energía & Sensores Periféricos
-                </h2>
-                <span class="text-xs font-mono-hud text-slate-500">Redmi Note 14 Pro+</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono-hud">
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <div class="text-xs text-slate-400 mb-1">NIVEL DE BATERÍA</div>
-                    <div class="text-xl font-bold text-white" id="batLevel">—</div>
-                    <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                        <span>Estado:</span> <span id="batCharging" class="text-hudGreen">Desconocido</span>
-                    </div>
-                </div>
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <div class="text-xs text-slate-400 mb-1">EMISOR IR (BLASTER)</div>
-                    <div class="text-sm font-bold text-hudCyan mt-1">Presente (Hardware)</div>
-                    <div class="text-[10px] text-slate-400 mt-1">Restringido por API Web</div>
-                </div>
-                <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <div class="text-xs text-slate-400 mb-1">SENSOR FLICKER (PANTALLA)</div>
-                    <div class="text-sm font-bold text-hudYellow mt-1" id="flickerVal">Monitoreando luz</div>
-                    <div class="text-[10px] text-slate-400 mt-1">Estimación por fotometría</div>
-                </div>
-            </div>
+        <div class="axis-row">
+            <span class="axis-label">Beta (X)</span>
+            <span class="axis-val" id="oriBeta">—</span>
         </div>
-
-        <!-- CONSOLA DE REGISTRO EN TIEMPO REAL (LOG) -->
-        <div class="hud-card rounded-2xl p-5 md:col-span-2">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-xs font-mono-hud uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-slate-500"></span> Registro de Eventos en Tiempo Real (Log)
-                </h2>
-                <button id="clearLog" class="text-[10px] font-mono-hud text-slate-400 hover:text-hudCyan underline">Limpiar Log</button>
-            </div>
-            <div id="eventLog" class="bg-slate-950 rounded-xl p-3 h-32 overflow-y-auto font-mono-hud text-xs text-slate-300 space-y-1 border border-slate-900">
-                <div class="text-slate-500">[00:00:00] Sistema en espera de activación de sensores...</div>
-            </div>
+        <div class="axis-row">
+            <span class="axis-label">Gamma (Y)</span>
+            <span class="axis-val" id="oriGamma">—</span>
         </div>
+        <div class="axis-row">
+            <span class="axis-label">Absoluta</span>
+            <span class="badge badge-na" id="oriAbs">—</span>
+        </div>
+    </div>
 
-    </main>
+    <!-- MOVIMIENTO (DeviceMotion) -->
+    <div class="card">
+        <h2><span class="dot"></span> Movimiento</h2>
+        <div class="axis-row">
+            <span class="axis-label">Acel. (con gravedad)</span>
+            <span class="axis-val" id="motAccel">—</span>
+        </div>
+        <div class="axis-row">
+            <span class="axis-label">Rotación</span>
+            <span class="axis-val" id="motRot">—</span>
+        </div>
+        <div class="axis-row">
+            <span class="axis-label">Intervalo</span>
+            <span class="axis-val" id="motInterval">—</span>
+        </div>
+    </div>
 
-    <script>
-    (function() {
-        'use strict';
+    <!-- VIBRACIÓN -->
+    <div class="card">
+        <h2><span class="dot"></span> Vibración</h2>
+        <div class="value value-sm" id="vibState">—</div>
+        <div class="unit">Motor lineal eje X</div>
+        <button class="btn" id="vibBtn" style="margin:12px 0 0;padding:10px;font-size:0.8rem">Probar Vibración</button>
+    </div>
 
-        const $ = (id) => document.getElementById(id);
-        const fmt = (v, d = 2) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(d);
-        const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+    <!-- BATERÍA -->
+    <div class="card">
+        <h2><span class="dot"></span> Batería</h2>
+        <div class="value value-sm" id="batLevel">—</div>
+        <div class="unit">Nivel de carga</div>
+        <div class="axis-row" style="margin-top:8px">
+            <span class="axis-label">Cargando</span>
+            <span class="badge badge-na" id="batCharging">—</span>
+        </div>
+    </div>
 
-        let active = false;
-        let sensors = {};
-        let calibrationOffsets = { x: 0, y: 0, z: 0 };
-        let wavePoints = [];
+    <!-- FLICKER (estimado) -->
+    <div class="card">
+        <h2><span class="dot"></span> Parpadeo (Flicker)</h2>
+        <div class="value value-sm" id="flickerVal">—</div>
+        <div class="unit">Frecuencia estimada</div>
+        <div class="axis-row" style="margin-top:8px">
+            <span class="axis-label">Estado</span>
+            <span class="badge badge-na" id="flickerBadge">No accesible vía Web</span>
+        </div>
+    </div>
 
-        // Inicializar puntos para la gráfica de onda SVG
-        for(let i=0; i<=300; i+=15) {
-            wavePoints.push({ x: i, y: 30 });
+    <!-- INFRARROJOS -->
+    <div class="card">
+        <h2><span class="dot"></span> Infrarrojos (IR)</h2>
+        <div class="value value-sm" id="irVal">—</div>
+        <div class="unit">Emisor IR Blaster</div>
+        <div class="axis-row" style="margin-top:8px">
+            <span class="axis-label">Estado</span>
+            <span class="badge badge-na" id="irBadge">No accesible vía Web</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = (v, d = 2) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(d);
+    const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+    let sensors = {};
+    let active = false;
+
+    // ========================
+    // UTILIDADES DE UI
+    // ========================
+    function setStatus(msg, type) {
+        const el = $('statusMsg');
+        el.textContent = msg;
+        el.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function setBadge(id, text, type) {
+        const el = $(id);
+        el.textContent = text;
+        el.className = 'badge ' + (type || 'badge-na');
+    }
+
+    // ========================
+    // ACELERÓMETRO (Generic Sensor API)
+    // ========================
+    function initAccelerometer() {
+        try {
+            if (typeof Accelerometer !== 'function') {
+                setStatus('Acelerómetro no soportado en este navegador', 'err');
+                return;
+            }
+            const acc = new Accelerometer({ frequency: 60, referenceFrame: 'device' });
+            acc.addEventListener('reading', () => {
+                const x = acc.x, y = acc.y, z = acc.z;
+                $('accelX').textContent = fmt(x) + ' m/s²';
+                $('accelY').textContent = fmt(y) + ' m/s²';
+                $('accelZ').textContent = fmt(z) + ' m/s²';
+                const mag = Math.sqrt(x*x + y*y + z*z);
+                $('accelBar').style.width = clamp((mag / 20) * 100, 0, 100) + '%';
+            });
+            acc.addEventListener('error', (e) => {
+                setStatus('Error acelerómetro: ' + e.error.message, 'err');
+            });
+            acc.start();
+            sensors.accelerometer = acc;
+        } catch (e) {
+            console.warn('Acelerómetro:', e.message);
         }
+    }
 
-        function addLog(msg) {
-            const logEl = $('eventLog');
-            if (!logEl) return;
-            const time = new Date().toTimeString().split(' ')[0];
-            const div = document.createElement('div');
-            div.className = 'text-slate-300';
-            div.textContent = `[${time}] ${msg}`;
-            logEl.appendChild(div);
-            logEl.scrollTop = logEl.scrollHeight;
+    // ========================
+    // GIROSCOPIO
+    // ========================
+    function initGyroscope() {
+        try {
+            if (typeof Gyroscope !== 'function') return;
+            const gyro = new Gyroscope({ frequency: 60, referenceFrame: 'device' });
+            gyro.addEventListener('reading', () => {
+                const x = gyro.x, y = gyro.y, z = gyro.z;
+                $('gyroX').textContent = fmt(x) + ' °/s';
+                $('gyroY').textContent = fmt(y) + ' °/s';
+                $('gyroZ').textContent = fmt(z) + ' °/s';
+                const mag = Math.sqrt(x*x + y*y + z*z);
+                $('gyroBar').style.width = clamp((mag / 500) * 100, 0, 100) + '%';
+            });
+            gyro.addEventListener('error', (e) => {
+                console.warn('Error giroscopio:', e.error.message);
+            });
+            gyro.start();
+            sensors.gyroscope = gyro;
+        } catch (e) {
+            console.warn('Giroscopio:', e.message);
         }
+    }
 
-        $('clearLog').addEventListener('click', () => {
-            $('eventLog.innerHTML') = '';
-            addLog('Log de eventos reiniciado.');
+    // ========================
+    // MAGNETÓMETRO
+    // ========================
+    function initMagnetometer() {
+        try {
+            if (typeof Magnetometer !== 'function') return;
+            const mag = new Magnetometer({ frequency: 10, referenceFrame: 'device' });
+            mag.addEventListener('reading', () => {
+                const x = mag.x, y = mag.y, z = mag.z;
+                $('magX').textContent = fmt(x, 1) + ' µT';
+                $('magY').textContent = fmt(y, 1) + ' µT';
+                $('magZ').textContent = fmt(z, 1) + ' µT';
+                // Rumbo aproximado
+                if (x != null && y != null) {
+                    let heading = Math.atan2(y, x) * (180 / Math.PI);
+                    if (heading < 0) heading += 360;
+                    const dirs = ['N','NE','E','SE','S','SO','O','NO'];
+                    const dir = dirs[Math.round(heading / 45) % 8];
+                    $('heading').textContent = fmt(heading, 0) + '° ' + dir;
+                }
+            });
+            mag.addEventListener('error', (e) => {
+                console.warn('Error magnetómetro:', e.error.message);
+            });
+            mag.start();
+            sensors.magnetometer = mag;
+        } catch (e) {
+            console.warn('Magnetómetro:', e.message);
+        }
+    }
+
+    // ========================
+    // LUZ AMBIENTAL
+    // ========================
+    function initAmbientLight() {
+        try {
+            if (typeof AmbientLightSensor !== 'function') {
+                setBadge('luxBadge', 'No soportado', 'badge-off');
+                return;
+            }
+            const als = new AmbientLightSensor({ frequency: 5 });
+            als.addEventListener('reading', () => {
+                const lux = als.illuminance;
+                $('luxValue').textContent = fmt(lux, 1);
+                $('luxBar').style.width = clamp((lux / 1000) * 100, 0, 100) + '%';
+                if (lux < 10) setBadge('luxBadge', 'Oscuro', 'badge-off');
+                else if (lux < 100) setBadge('luxBadge', 'Interior', 'badge-na');
+                else if (lux < 1000) setBadge('luxBadge', 'Nublado', 'badge-on');
+                else setBadge('luxBadge', 'Sol directo', 'badge-on');
+            });
+            als.addEventListener('error', (e) => {
+                setBadge('luxBadge', 'Error', 'badge-off');
+            });
+            als.start();
+            sensors.ambientLight = als;
+        } catch (e) {
+            setBadge('luxBadge', 'No disponible', 'badge-off');
+            console.warn('Luz ambiental:', e.message);
+        }
+    }
+
+    // ========================
+    // ORIENTACIÓN (DeviceOrientationEvent)
+    // ========================
+    function initDeviceOrientation() {
+        if (!window.DeviceOrientationEvent) {
+            setBadge('oriAbs', 'No soportado', 'badge-off');
+            return;
+        }
+        window.addEventListener('deviceorientation', (e) => {
+            $('oriAlpha').textContent = e.alpha != null ? fmt(e.alpha, 1) + '°' : '—';
+            $('oriBeta').textContent  = e.beta  != null ? fmt(e.beta, 1)  + '°' : '—';
+            $('oriGamma').textContent = e.gamma != null ? fmt(e.gamma, 1) + '°' : '—';
+            setBadge('oriAbs', e.absolute ? 'Sí' : 'Relativa', e.absolute ? 'badge-on' : 'badge-na');
         });
+    }
 
-        function setStatus(msg, type = 'info') {
-            const banner = $('statusBanner');
-            banner.textContent = msg;
-            if (type === 'ok') {
-                banner.className = 'max-w-4xl mx-auto mb-6 p-3 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-center text-xs md:text-sm font-mono-hud text-emerald-400';
-            } else if (type === 'err') {
-                banner.className = 'max-w-4xl mx-auto mb-6 p-3 rounded-lg bg-rose-950/40 border border-rose-800/60 text-center text-xs md:text-sm font-mono-hud text-rose-400';
-            } else {
-                banner.className = 'max-w-4xl mx-auto mb-6 p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-center text-xs md:text-sm font-mono-hud text-slate-400';
+    // ========================
+    // MOVIMIENTO (DeviceMotionEvent)
+    // ========================
+    function initDeviceMotion() {
+        if (!window.DeviceMotionEvent) return;
+        window.addEventListener('devicemotion', (e) => {
+            const a = e.accelerationIncludingGravity;
+            if (a) {
+                $('motAccel').textContent = `X:${fmt(a.x,1)} Y:${fmt(a.y,1)} Z:${fmt(a.z,1)}`;
             }
-        }
-
-        // ========================
-        // CALIBRACIÓN / RESET CERO
-        // ========================
-        function calibrateSensors() {
-            addLog('Calibrando offsets actuales del acelerómetro...');
-            if (sensors.lastAccel) {
-                calibrationOffsets.x = sensors.lastAccel.x;
-                calibrationOffsets.y = sensors.lastAccel.y;
-                calibrationOffsets.z = sensors.lastAccel.z;
-                setStatus('✓ Calibración completada. Cero ajustado.', 'ok');
-                addLog(`Offsets guardados -> X:${fmt(calibrationOffsets.x)} Y:${fmt(calibrationOffsets.y)} Z:${fmt(calibrationOffsets.z)}`);
-            } else {
-                setStatus('No hay lectura previa para calibrar', 'err');
+            const r = e.rotationRate;
+            if (r) {
+                $('motRot').textContent = `α:${fmt(r.alpha,0)} β:${fmt(r.beta,0)} γ:${fmt(r.gamma,0)}`;
             }
+            $('motInterval').textContent = e.interval ? fmt(e.interval, 0) + ' ms' : '—';
+        });
+    }
+
+    // ========================
+    // VIBRACIÓN
+    // ========================
+    function initVibration() {
+        if (!navigator.vibrate) {
+            $('vibState').textContent = 'No soportado';
+            $('vibBtn').disabled = true;
+            return;
         }
-        $('calibBtn').addEventListener('click', calibrateSensors);
+        $('vibState').textContent = 'Listo';
+        $('vibBtn').addEventListener('click', () => {
+            navigator.vibrate([50, 30, 100, 30, 200]);
+            $('vibState').textContent = 'Patrón: 50-30-100-30-200 ms';
+        });
+    }
 
-        // ========================
-        // ACELERÓMETRO (Generic Sensor API)
-        // ========================
-        function initAccelerometer() {
-            try {
-                if (typeof Accelerometer !== 'function') {
-                    addLog('Accelerometer API no soportada. Usando fallback DeviceMotion.');
-                    initDeviceMotionFallback();
-                    return;
-                }
-                const acc = new Accelerometer({ frequency: 60, referenceFrame: 'device' });
-                acc.addEventListener('reading', () => {
-                    const x = acc.x - calibrationOffsets.x;
-                    const y = acc.y - calibrationOffsets.y;
-                    const z = acc.z - calibrationOffsets.z;
-                    sensors.lastAccel = { x: acc.x, y: acc.y, z: acc.z };
-
-                    $('accelX').textContent = fmt(x) + ' m/s²';
-                    $('accelY').textContent = fmt(y) + ' m/s²';
-                    $('accelZ').textContent = fmt(z) + ' m/s²';
-
-                    const mag = Math.sqrt(x*x + y*y + z*z);
-                    const gForce = mag / 9.81;
-                    $('accelMag').textContent = fmt(gForce) + ' G';
-                    $('accelBar').style.width = clamp((gForce / 3) * 100, 0, 100) + '%';
-                });
-                acc.addEventListener('error', (e) => {
-                    addLog('Error en Acelerómetro: ' + e.error.message);
-                });
-                acc.start();
-                sensors.accelerometer = acc;
-                addLog('Sensor Acelerómetro iniciado (60Hz).');
-            } catch (e) {
-                addLog('Excepción al iniciar Acelerómetro: ' + e.message);
-                initDeviceMotionFallback();
+    // ========================
+    // BATERÍA
+    // ========================
+    function initBattery() {
+        if (!navigator.getBattery) {
+            $('batLevel').textContent = 'No soportado';
+            return;
+        }
+        navigator.getBattery().then((bat) => {
+            function update() {
+                $('batLevel').textContent = Math.round(bat.level * 100) + '%';
+                setBadge('batCharging', bat.charging ? 'Sí' : 'No', bat.charging ? 'badge-on' : 'badge-na');
             }
-        }
+            update();
+            bat.addEventListener('levelchange', update);
+            bat.addEventListener('chargingchange', update);
+        }).catch(() => {
+            $('batLevel').textContent = 'Error';
+        });
+    }
 
-        // ========================
-        // GIROSCOPIO & ONDA
-        // ========================
-        function initGyroscope() {
-            try {
-                if (typeof Gyroscope !== 'function') {
-                    addLog('Gyroscope API no soportada. Usando fallback DeviceMotion.');
-                    return;
-                }
-                const gyro = new Gyroscope({ frequency: 60, referenceFrame: 'device' });
-                gyro.addEventListener('reading', () => {
-                    const x = gyro.x, y = gyro.y, z = gyro.z;
-                    $('gyroX').textContent = fmt(x) + '°/s';
-                    $('gyroY').textContent = fmt(y) + '°/s';
-                    $('gyroZ').textContent = fmt(z) + '°/s';
-
-                    // Actualizar onda SVG en tiempo real
-                    updateWaveform(y);
-                });
-                gyro.addEventListener('error', (e) => {
-                    addLog('Error en Giroscopio: ' + e.error.message);
-                });
-                gyro.start();
-                sensors.gyroscope = gyro;
-                addLog('Sensor Giroscopio iniciado (60Hz).');
-            } catch (e) {
-                addLog('Excepción al iniciar Giroscopio: ' + e.message);
-            }
-        }
-
-        function updateWaveform(val) {
-            wavePoints.shift();
-            // Mapear velocidad angular a coordenada Y (0 a 60)
-            const mappedY = clamp(30 - (val * 0.2), 5, 55);
-            wavePoints.push({ x: 300, y: mappedY });
-            
-            // Re-indexar X de 0 a 300
-            for(let i=0; i<wavePoints.length; i++) {
-                wavePoints[i].x = i * (300 / (wavePoints.length - 1));
-            }
-
-            let pathStr = `M ${wavePoints[0].x},${wavePoints[0].y}`;
-            for(let i=1; i<wavePoints.length; i++) {
-                pathStr += ` L ${wavePoints[i].x},${wavePoints[i].y}`;
-            }
-            const pathEl = $('wavePath');
-            if(pathEl) pathEl.setAttribute('d', pathStr);
-        }
-
-        // ========================
-        // MAGNETÓMETRO & BRÚJULA
-        // ========================
-        function initMagnetometer() {
-            try {
-                if (typeof Magnetometer !== 'function') {
-                    addLog('Magnetometer API no disponible.');
-                    $('magStatus').textContent = 'No soportado';
-                    return;
-                }
-                const mag = new Magnetometer({ frequency: 20, referenceFrame: 'device' });
-                mag.addEventListener('reading', () => {
-                    const x = mag.x, y = mag.y, z = mag.z;
-                    const totalMag = Math.sqrt(x*x + y*y + z*z);
-                    $('magTotal').textContent = fmt(totalMag, 1) + ' μT';
-
-                    if (x != null && y != null) {
-                        let heading = Math.atan2(y, x) * (180 / Math.PI);
-                        if (heading < 0) heading += 360;
-                        const dirs = ['N','NE','E','SE','S','SO','O','NO'];
-                        const dir = dirs[Math.round(heading / 45) % 8];
-                        $('headingVal').textContent = `${fmt(heading, 0)}° (${dir})`;
-                        const needle = $('compassNeedle');
-                        if(needle) needle.style.transform = `rotate(${heading}deg)`;
-                    }
-                });
-                mag.start();
-                sensors.magnetometer = mag;
-                addLog('Sensor Magnetómetro iniciado.');
-            } catch (e) {
-                addLog('Error magnetómetro: ' + e.message);
-            }
-        }
-
-        // ========================
-        // LUZ AMBIENTAL
-        // ========================
-        function initAmbientLight() {
-            try {
-                if (typeof AmbientLightSensor !== 'function') {
-                    $('luxBadge').textContent = 'No soportado';
-                    $('luxDesc').textContent = 'API AmbientLightSensor no disponible en este navegador.';
-                    return;
-                }
-                const als = new AmbientLightSensor({ frequency: 5 });
-                als.addEventListener('reading', () => {
-                    const lux = als.illuminance;
-                    $('luxValue').textContent = fmt(lux, 1);
-                    $('luxBar').style.width = clamp((lux / 1000) * 100, 0, 100) + '%';
-                    
-                    let desc = 'Condición normal';
-                    let badgeText = 'Interior';
-                    if (lux < 10) { desc = 'Ambiente muy oscuro / Nocturno'; badgeText = 'Oscuro'; }
-                    else if (lux < 200) { desc = 'Iluminación típica de oficina / interior'; badgeText = 'Interior'; }
-                    else if (lux < 10000) { desc = 'Luz diurna nublada o brillante'; badgeText = 'Exterior'; }
-                    else { desc = 'Luz solar directa intensa'; badgeText = 'Sol Directo'; }
-
-                    $('luxBadge').textContent = badgeText;
-                    $('luxDesc').textContent = desc;
-
-                    // Estimación de Flicker basado en variación lumínica rápida
-                    if(sensors.lastLux != null) {
-                        const diff = Math.abs(lux - sensors.lastLux);
-                        if(diff > 20) {
-                            $('flickerVal').textContent = 'Fluctuación Alta (PWM detectado)';
-                        } else {
-                            $('flickerVal').textContent = 'Estable';
-                        }
-                    }
-                    sensors.lastLux = lux;
-                });
-                als.start();
-                sensors.ambientLight = als;
-                $('luxBadge').textContent = 'Activo';
-                addLog('Sensor de Luz Ambiental iniciado.');
-            } catch (e) {
-                $('luxBadge').textContent = 'Error';
-                addLog('Error luz ambiental: ' + e.message);
-            }
-        }
-
-        // ========================
-        // ORIENTACIÓN (DeviceOrientation)
-        // ========================
-        function initDeviceOrientation() {
-            if (!window.DeviceOrientationEvent) {
-                addLog('DeviceOrientationEvent no soportado.');
-                return;
-            }
-            window.addEventListener('deviceorientation', (e) => {
-                $('oriAlpha').textContent = e.alpha != null ? fmt(e.alpha, 1) + '°' : '—';
-                $('oriBeta').textContent  = e.beta  != null ? fmt(e.beta, 1)  + '°' : '—';
-                $('oriGamma').textContent = e.gamma != null ? fmt(e.gamma, 1) + '°' : '—';
-                
-                const badge = $('oriAbsBadge');
-                if (badge) {
-                    badge.textContent = e.absolute ? 'Absoluta' : 'Relativa';
-                    badge.className = e.absolute ? 'px-2 py-0.5 rounded text-[10px] font-mono-hud bg-emerald-950 text-emerald-400 border border-emerald-800' : 'px-2 py-0.5 rounded text-[10px] font-mono-hud bg-slate-800 text-slate-400';
-                }
-            });
-            addLog('Escucha de Orientación de Dispositivo activada.');
-        }
-
-        // ========================
-        // FALLBACK DEVICE MOTION
-        // ========================
-        function initDeviceMotionFallback() {
-            if (!window.DeviceMotionEvent) return;
-            window.addEventListener('devicemotion', (e) => {
-                const acc = e.accelerationIncludingGravity;
-                if (acc && !sensors.accelerometer) {
-                    const x = acc.x, y = acc.y, z = acc.z;
-                    $('accelX').textContent = fmt(x) + ' m/s²';
-                    $('accelY').textContent = fmt(y) + ' m/s²';
-                    $('accelZ').textContent = fmt(z) + ' m/s²';
-                    const mag = Math.sqrt(x*x + y*y + z*z);
-                    const gForce = mag / 9.81;
-                    $('accelMag').textContent = fmt(gForce) + ' G';
-                    $('accelBar').style.width = clamp((gForce / 3) * 100, 0, 100) + '%';
-                }
-                const rot = e.rotationRate;
-                if (rot && !sensors.gyroscope) {
-                    $('gyroX').textContent = fmt(rot.alpha, 1) + '°/s';
-                    $('gyroY').textContent = fmt(rot.beta, 1) + '°/s';
-                    $('gyroZ').textContent = fmt(rot.gamma, 1) + '°/s';
-                    updateWaveform(rot.beta);
-                }
-            });
-            addLog('Fallback DeviceMotionEvent activado.');
-        }
-
-        // ========================
-        // HÁPTICA / VIBRACIÓN
-        // ========================
-        function initVibration() {
-            if (!navigator.vibrate) {
-                $('vibStatusBadge').textContent = 'No Soportado';
-                $('vibInfo').textContent = 'La vibración no está disponible en este navegador.';
-                return;
-            }
-            $('vibStatusBadge').textContent = 'Activo';
-            
-            document.querySelectorAll('.vib-test-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const patternAttr = e.target.getAttribute('data-pattern');
-                    const pattern = patternAttr.split(',').map(Number);
-                    navigator.vibrate(pattern);
-                    addLog(`Vibración háptica ejecutada con patrón: [${patternAttr}] ms`);
-                });
-            });
-        }
-
-        // ========================
-        // BATERÍA
-        // ========================
-        function initBattery() {
-            if (!navigator.getBattery) {
-                $('batLevel').textContent = 'No soportado';
-                return;
-            }
-            navigator.getBattery().then(bat => {
-                function updateBat() {
-                    $('batLevel').textContent = Math.round(bat.level * 100) + '%';
-                    const chargingEl = $('batCharging');
-                    chargingEl.textContent = bat.charging ? 'Cargando (AC)' : 'Descargando';
-                    chargingEl.className = bat.charging ? 'text-hudGreen font-bold' : 'text-slate-400';
-                }
-                updateBat();
-                bat.addEventListener('levelchange', updateBat);
-                bat.addEventListener('chargingchange', updateBat);
-                addLog('API de Batería vinculada correctamente.');
-            }).catch(() => {
-                $('batLevel').textContent = 'Acceso denegado';
-            });
-        }
-
-        // ========================
-        // INICIO DE LA APLICACIÓN
-        // ========================
-        async function startAllSensors() {
-            if (active) return;
-            active = true;
-
-            const btn = $('startBtn');
-            btn.disabled = true;
-            btn.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Iniciando Sensores...</span>`;
-            setStatus('Solicitando permisos y activando hardware...', 'info');
-
-            try {
-                // Permisos para iOS 13+ / Android modernos
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    const response = await DeviceOrientationEvent.requestPermission();
-                    if (response !== 'granted') {
-                        setStatus('Permiso de orientación denegado por el usuario.', 'err');
-                        active = false;
-                        btn.disabled = false;
-                        btn.innerHTML = '<span>▶ Reintentar Activación</span>';
-                        return;
+    // ========================
+    // FLICKER (aproximación con sensor de luz)
+    // ========================
+    function initFlickerEstimate() {
+        // El sensor de parpadeo del Redmi Note 14 Pro+ no es accesible vía Web API.
+        // Se estima cualitativamente usando la variación de luz ambiental.
+        if (sensors.ambientLight) {
+            let lastLux = null;
+            let varianceSum = 0, samples = 0;
+            sensors.ambientLight.addEventListener('reading', () => {
+                const lux = sensors.ambientLight.illuminance;
+                if (lastLux != null) {
+                    varianceSum += Math.abs(lux - lastLux);
+                    samples++;
+                    if (samples > 20) {
+                        const avgVar = varianceSum / samples;
+                        $('flickerVal').textContent = avgVar > 5 ? 'Alta variación' : avgVar > 1 ? 'Moderada' : 'Estable';
+                        setBadge('flickerBadge', 'Estimado por luz', 'badge-na');
+                        varianceSum = 0; samples = 0;
                     }
                 }
-                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                    await DeviceMotionEvent.requestPermission();
-                }
-
-                // Mostrar dashboard HUD
-                $('dashboard').style.display = 'grid';
-                $('calibBtn.disabled') = false;
-                $('calibBtn').removeAttribute('disabled');
-
-                // Inicializar cada subsistema
-                initAccelerometer();
-                initGyroscope();
-                initMagnetometer();
-                initAmbientLight();
-                initDeviceOrientation();
-                initDeviceMotionFallback();
-                initVibration();
-                initBattery();
-
-                setStatus('✓ Matriz de Super Sentidos activa y monitoreando en tiempo real.', 'ok');
-                btn.innerHTML = `<span>✓ Sensores Activos (En Línea)</span>`;
-                addLog('¡Subsistemas iniciados con éxito en Redmi Note 14 Pro+!');
-
-            } catch (err) {
-                setStatus('Error al activar sensores: ' + err.message, 'err');
-                active = false;
-                btn.disabled = false;
-                btn.innerHTML = '<span>▶ Reintentar Activación</span>';
-                addLog('Error crítico: ' + err.message);
-            }
+                lastLux = lux;
+            });
+        } else {
+            $('flickerVal').textContent = '—';
         }
+    }
 
-        $('startBtn').addEventListener('click', startAllSensors);
+    // ========================
+    // INFRARROJOS
+    // ========================
+    function initIR() {
+        // El IR Blaster no es accesible desde el navegador web por seguridad.
+        $('irVal').textContent = 'Emisor disponible';
+        setBadge('irBadge', 'Hardware presente', 'badge-on');
+    }
 
-    })();
-    </script>
+    // ========================
+    // ARRANQUE
+    // ========================
+    async function startAll() {
+        if (active) return;
+        active = true;
+
+        $('startBtn').disabled = true;
+        $('startBtn').textContent = 'Activando...';
+        setStatus('Solicitando permisos...', '');
+
+        try {
+            // Permisos para iOS 13+ (y algunos Android)
+            if (typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const perm = await DeviceOrientationEvent.requestPermission();
+                if (perm !== 'granted') {
+                    setStatus('Permiso de orientación denegado', 'err');
+                    active = false;
+                    $('startBtn').disabled = false;
+                    $('startBtn').textContent = '▶ Reintentar';
+                    return;
+                }
+            }
+            if (typeof DeviceMotionEvent !== 'undefined' &&
+                typeof DeviceMotionEvent.requestPermission === 'function') {
+                const perm = await DeviceMotionEvent.requestPermission();
+                if (perm !== 'granted') {
+                    setStatus('Permiso de movimiento denegado', 'err');
+                }
+            }
+
+            // Permiso de sensores genéricos (Chrome Android)
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    await navigator.permissions.query({ name: 'accelerometer' });
+                    await navigator.permissions.query({ name: 'gyroscope' });
+                    await navigator.permissions.query({ name: 'magnetometer' });
+                } catch (e) {
+                    // Algunos navegadores no exponen estos nombres
+                }
+            }
+
+            $('dashboard').style.display = 'grid';
+
+            initAccelerometer();
+            initGyroscope();
+            initMagnetometer();
+            initAmbientLight();
+            initDeviceOrientation();
+            initDeviceMotion();
+            initVibration();
+            initBattery();
+            initIR();
+
+            // Pequeño delay para que el sensor de luz esté listo
+            setTimeout(initFlickerEstimate, 500);
+
+            setStatus('✓ Sensores activos — mueve el dispositivo', 'ok');
+            $('startBtn').textContent = '✓ Activo';
+
+        } catch (e) {
+            setStatus('Error: ' + e.message, 'err');
+            active = false;
+            $('startBtn').disabled = false;
+            $('startBtn').textContent = '▶ Reintentar';
+        }
+    }
+
+    $('startBtn').addEventListener('click', startAll);
+
+})();
+</script>
 </body>
 </html>
-```
